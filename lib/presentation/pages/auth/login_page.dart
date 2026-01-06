@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
 
-      // Simulate login process
+      // Simulate login process - accepts any dummy credentials
       await Future.delayed(const Duration(seconds: 2));
 
       setState(() => _isLoading = false);
@@ -122,6 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               validator: (value) {
+                                // Accept any input for dummy login
                                 if (value?.isEmpty ?? true) {
                                   return 'Masukkan nomor handphone';
                                 }
@@ -198,11 +199,9 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               validator: (value) {
+                                // Accept any password for dummy login
                                 if (value?.isEmpty ?? true) {
                                   return 'Masukkan password';
-                                }
-                                if ((value?.length ?? 0) < 6) {
-                                  return 'Password minimal 6 karakter';
                                 }
                                 return null;
                               },

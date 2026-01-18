@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:robandigital/presentation/providers/home_provider.dart';
+import 'package:robandigital/config/routes/app_routes.dart';
 import 'account_page.dart';
 import 'change_password_page.dart';
 import 'notification_page.dart';
@@ -143,10 +146,57 @@ class ProfilePage extends StatelessWidget {
                   ),
                 );
               },
+            ),
+            
+            _buildMenuItem(
+              context,
+              icon: Icons.logout,
+              title: 'Logout',
+              onTap: () => _showLogoutConfirmation(context),
               isLast: true,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              final homeProvider = context.read<HomeProvider>();
+              final success = await homeProvider.logout();
+              
+              if (success && context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                  (route) => false,
+                );
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Logout gagal')),
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
       ),
     );
   }

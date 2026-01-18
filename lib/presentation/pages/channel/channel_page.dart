@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/channel_provider.dart';
 import 'participants_page.dart';
 import 'channel_chat_page.dart';
 
@@ -10,23 +12,30 @@ class ChannelPage extends StatefulWidget {
 }
 
 class _ChannelPageState extends State<ChannelPage> {
-  final List<Map<String, dynamic>> channels = [
-    {
-      'name': 'Patroli Garuda',
-      'isOnline': true,
-      'participants': 50,
-    },
-    {
-      'name': 'Patroli Garuda',
-      'isOnline': false,
-      'participants': 50,
-    },
-    {
-      'name': 'Patroli Garuda',
-      'isOnline': true,
-      'participants': 50,
-    },
-  ];
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    // Load channels on init
+    Future.microtask(() {
+      context.read<ChannelProvider>().getChannels();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      context.read<ChannelProvider>().loadMoreChannels();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,19 +58,64 @@ class _ChannelPageState extends State<ChannelPage> {
         ),
         centerTitle: false,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: channels.length,
-        itemBuilder: (context, index) {
-          final channel = channels[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildChannelCard(
-              channel['name'],
-              channel['isOnline'],
-              channel['participants'],
-              index,
-            ),
+      body: Consumer<ChannelProvider>(
+        builder: (context, channelProvider, _) {
+          if (channelProvider.isLoading && channelProvider.channels.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (channelProvider.state == ChannelState.error) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: ${channelProvider.errorMessage}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      channelProvider.refreshChannels();
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (channelProvider.channels.isEmpty) {
+            return const Center(
+              child: Text('No channels available'),
+            );
+          }
+
+          return ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            itemCount: channelProvider.channels.length +
+                (channelProvider.hasMorePages ? 1 : 0),
+            itemBuilder: (context, index) {
+              // Show loading indicator at the bottom when loading more
+              if (index == channelProvider.channels.length) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              final channel = channelProvider.channels[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildChannelCard(
+                  channel.name,
+                  channel.isActive,
+                  channel.id,
+                ),
+              );
+            },
           );
         },
       ),
@@ -70,9 +124,8 @@ class _ChannelPageState extends State<ChannelPage> {
 
   Widget _buildChannelCard(
     String name,
-    bool isOnline,
-    int participants,
-    int index,
+    bool isActive,
+    int channelId,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -95,7 +148,7 @@ class _ChannelPageState extends State<ChannelPage> {
               MaterialPageRoute(
                 builder: (context) => ChannelChatPage(
                   channelName: name,
-                  isOnline: isOnline,
+                  isOnline: isActive,
                 ),
               ),
             );
@@ -122,6 +175,8 @@ class _ChannelPageState extends State<ChannelPage> {
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1E3A5F),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -133,13 +188,13 @@ class _ChannelPageState extends State<ChannelPage> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isOnline ? Colors.green : Colors.red,
+                        color: isActive ? Colors.green : Colors.red,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isOnline ? 'Online' : 'Offline',
+                      isActive ? 'Active' : 'Inactive',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -163,7 +218,7 @@ class _ChannelPageState extends State<ChannelPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '$participants Peserta',
+                        'Channel ID: $channelId',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],

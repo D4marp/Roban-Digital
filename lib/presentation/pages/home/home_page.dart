@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:robandigital/presentation/providers/home_provider.dart';
 import '../talk/talk_page.dart';
 import '../channel/channel_page.dart';
 import '../channel/channel_chat_page.dart';
@@ -42,6 +44,11 @@ class _HomePageState extends State<HomePage> {
         statusBarIconBrightness: Brightness.light,
       ),
     );
+    
+    // Load user data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeProvider>().initializeUserData();
+    });
   }
 
   @override
@@ -240,22 +247,31 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: const [
-                      Text(
-                        'Salsabila Khaliq',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    children: [
+                      Consumer<HomeProvider>(
+                        builder: (context, homeProvider, _) {
+                          return Text(
+                            homeProvider.userName ?? 'User',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'salsabila123@gmail.com',
-                        style: TextStyle(
-                          fontSize: 8,
-                          color: Colors.white,
-                        ),
+                      const SizedBox(height: 2),
+                      Consumer<HomeProvider>(
+                        builder: (context, homeProvider, _) {
+                          return Text(
+                            homeProvider.userEmail ?? 'user@example.com',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white70,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

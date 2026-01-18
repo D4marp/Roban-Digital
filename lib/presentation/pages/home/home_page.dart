@@ -47,7 +47,9 @@ class _HomePageState extends State<HomePage> {
     
     // Load user data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeProvider>().initializeUserData();
+      if (mounted) {
+        context.read<HomeProvider>().initializeUserData();
+      }
     });
   }
 
@@ -251,7 +253,7 @@ class _HomePageState extends State<HomePage> {
                       Consumer<HomeProvider>(
                         builder: (context, homeProvider, _) {
                           return Text(
-                            homeProvider.userName ?? 'User',
+                            homeProvider.userName,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -264,7 +266,7 @@ class _HomePageState extends State<HomePage> {
                       Consumer<HomeProvider>(
                         builder: (context, homeProvider, _) {
                           return Text(
-                            homeProvider.userEmail ?? 'user@example.com',
+                            homeProvider.userEmail,
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w400,

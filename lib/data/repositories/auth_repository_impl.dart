@@ -44,6 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
         id: response.user.id,
         email: response.user.email,
         role: response.user.role,
+        username: response.user.username,
       );
 
       return Right(
@@ -88,6 +89,7 @@ class AuthRepositoryImpl implements AuthRepository {
         id: response.user.id,
         email: response.user.email,
         role: response.user.role,
+        username: response.user.username,
       );
 
       return Right(

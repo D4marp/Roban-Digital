@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:robandigital/core/utils/service_locator.dart';
+import 'package:robandigital/data/datasources/local/auth_local_datasource.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/auth_entity.dart';
 
@@ -7,56 +7,78 @@ enum HomeState { initial, loading, success, error }
 
 class HomeProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
+  final AuthLocalDataSource _authLocalDataSource;
 
   HomeState _state = HomeState.initial;
   String? _errorMessage;
   AuthEntity? _authEntity;
-  String? _userName;
-  String? _userEmail;
+  String _userName = '';
+  String _userEmail = '';
   String? _userRole;
 
-  HomeProvider({AuthRepository? authRepository})
-      : _authRepository = authRepository ?? getIt<AuthRepository>();
+  HomeProvider({
+    required AuthRepository authRepository,
+    required AuthLocalDataSource authLocalDataSource,
+  })  : _authRepository = authRepository,
+        _authLocalDataSource = authLocalDataSource {
+    // Load data from local storage immediately
+    _loadFromLocalStorage();
+  }
 
   // Getters
   HomeState get state => _state;
   String? get errorMessage => _errorMessage;
   AuthEntity? get authEntity => _authEntity;
-  String? get userName => _userName;
-  String? get userEmail => _userEmail;
+  String get userName => _userName;
+  String get userEmail => _userEmail;
   String? get userRole => _userRole;
   bool get isLoading => _state == HomeState.loading;
 
-  /// Initialize and load current user data
-  Future<void> initializeUserData() async {
-    _state = HomeState.loading;
-    _errorMessage = null;
-    notifyListeners();
+  /// Load user data from local storage
+  void _loadFromLocalStorage() {
+    try {
+      final username = _authLocalDataSource.getUsername() ?? '';
+      final email = _authLocalDataSource.getUserEmail() ?? '';
+      final role = _authLocalDataSource.getUserRole();
 
-    // First try to get from stored data
+      _userName = username.isNotEmpty ? username : 'User';
+      _userEmail = email.isNotEmpty ? email : 'user@example.com';
+      _userRole = role;
+
+      // Mark as success if we have at least email
+      if (email.isNotEmpty) {
+        _state = HomeState.success;
+      }
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Error loading local data: $e';
+    }
+  }
+
+  /// Initialize and load current user data from API
+  Future<void> initializeUserData() async {
+    // Data already loaded from local storage in constructor
+    // This just refreshes from API if available
+    
     final storedToken = await _authRepository.getStoredToken();
     
     if (storedToken != null && storedToken.isNotEmpty) {
-      // Load current user from API
-      await loadCurrentUser();
-    } else {
-      _state = HomeState.error;
-      _errorMessage = 'No authentication token found';
+      // Try to load current user from API
+      _state = HomeState.loading;
       notifyListeners();
+      
+      await loadCurrentUser();
     }
   }
 
   /// Load current user from API
   Future<void> loadCurrentUser() async {
-    _state = HomeState.loading;
-    _errorMessage = null;
-    notifyListeners();
-
     final result = await _authRepository.getCurrentUser();
 
     result.fold(
       (failure) {
-        _state = HomeState.error;
+        // Keep local data even if API fails
+        _state = HomeState.success;
         _errorMessage = failure.message;
         notifyListeners();
       },
@@ -81,8 +103,8 @@ class HomeProvider extends ChangeNotifier {
 
       _state = HomeState.initial;
       _authEntity = null;
-      _userName = null;
-      _userEmail = null;
+      _userName = '';
+      _userEmail = '';
       _userRole = null;
       _errorMessage = null;
       notifyListeners();
@@ -96,3 +118,4 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 }
+

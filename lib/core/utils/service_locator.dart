@@ -10,7 +10,6 @@ import 'package:robandigital/domain/usecases/login_usecase.dart';
 import 'package:robandigital/domain/usecases/get_channels_usecase.dart';
 import 'package:robandigital/domain/usecases/get_channel_by_id_usecase.dart';
 import 'package:robandigital/presentation/providers/login_provider.dart';
-import 'package:robandigital/presentation/providers/home_provider.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/channel_repository.dart';
@@ -72,9 +71,5 @@ Future<void> setupServiceLocator() async {
   // Providers
   getIt.registerSingleton<LoginProvider>(
     LoginProvider(loginUseCase: getIt<LoginUseCase>()),
-  );
-
-  getIt.registerSingleton<HomeProvider>(
-    HomeProvider(authRepository: getIt<AuthRepository>()),
   );
 }

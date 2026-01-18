@@ -44,6 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
         id: response.user.id,
         email: response.user.email,
         role: response.user.role,
+        unitId: response.user.unitId,
         username: response.user.username,
       );
 
@@ -89,6 +90,7 @@ class AuthRepositoryImpl implements AuthRepository {
         id: response.user.id,
         email: response.user.email,
         role: response.user.role,
+        unitId: response.user.unitId,
         username: response.user.username,
       );
 

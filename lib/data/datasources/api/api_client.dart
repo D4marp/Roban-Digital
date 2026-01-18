@@ -21,17 +21,12 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          print('[ApiClient] Request: ${options.method} ${options.path}');
-          print('[ApiClient] Headers: ${options.headers}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('[ApiClient] Response: ${response.statusCode} ${response.requestOptions.path}');
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          print('[ApiClient] Error: ${e.response?.statusCode} ${e.message}');
-          print('[ApiClient] Error response: ${e.response?.data}');
           return handler.next(e);
         },
       ),
@@ -45,15 +40,11 @@ class ApiClient {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(_tokenKey);
-      print('[ApiClient] Initializing token. Token exists: ${token != null}');
       if (token != null && token.isNotEmpty) {
         setAuthToken(token);
-        print('[ApiClient] Token set successfully');
-      } else {
-        print('[ApiClient] No token found in SharedPreferences');
       }
     } catch (e) {
-      print('[ApiClient] Error initializing token: $e');
+      // Silently fail if prefs not available
     }
   }
 
@@ -95,7 +86,6 @@ class ApiClient {
 
   void setAuthToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
-    print('[ApiClient] Authorization header set with token: ${token.substring(0, 20)}...');
   }
 
   void removeAuthToken() {

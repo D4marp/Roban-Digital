@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:robandigital/core/utils/service_locator.dart';
+import 'package:robandigital/data/datasources/local/auth_local_datasource.dart';
 import '../../providers/channel_provider.dart';
 import 'participants_page.dart';
 import 'channel_chat_page.dart';
@@ -18,9 +20,10 @@ class _ChannelPageState extends State<ChannelPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // Load channels on init
+    // Load channels on init with user's unitId
     Future.microtask(() {
-      context.read<ChannelProvider>().getChannels();
+      final unitId = getIt<AuthLocalDataSource>().getUnitId();
+      context.read<ChannelProvider>().getChannels(unitId: unitId);
     });
   }
 

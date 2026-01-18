@@ -6,6 +6,7 @@ class AuthLocalDataSource {
   static const String _userEmailKey = 'user_email';
   static const String _userRoleKey = 'user_role';
   static const String _userUsernameKey = 'user_username';
+  static const String _userUnitIdKey = 'user_unitId';
 
   final SharedPreferences _prefs;
 
@@ -26,11 +27,13 @@ class AuthLocalDataSource {
     required int id,
     required String email,
     required String role,
+    required int unitId,
     String? username,
   }) async {
     await _prefs.setInt(_userIdKey, id);
     await _prefs.setString(_userEmailKey, email);
     await _prefs.setString(_userRoleKey, role);
+    await _prefs.setInt(_userUnitIdKey, unitId);
     if (username != null) {
       await _prefs.setString(_userUsernameKey, username);
     }
@@ -56,6 +59,11 @@ class AuthLocalDataSource {
     return _prefs.getString(_userUsernameKey);
   }
 
+  // Get user unit ID
+  int? getUnitId() {
+    return _prefs.getInt(_userUnitIdKey);
+  }
+
   // Get all user data
   Map<String, dynamic> getUserData() {
     return {
@@ -63,6 +71,7 @@ class AuthLocalDataSource {
       'email': getUserEmail(),
       'role': getUserRole(),
       'username': getUsername(),
+      'unitId': getUnitId(),
     };
   }
 
@@ -78,5 +87,6 @@ class AuthLocalDataSource {
     await _prefs.remove(_userEmailKey);
     await _prefs.remove(_userRoleKey);
     await _prefs.remove(_userUsernameKey);
+    await _prefs.remove(_userUnitIdKey);
   }
 }

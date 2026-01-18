@@ -66,6 +66,8 @@ class ChannelProvider extends ChangeNotifier {
       (failure) {
         _state = ChannelState.error;
         _errorMessage = failure.message;
+        print('[ChannelProvider] Error: ${failure.message}');
+        print('[ChannelProvider] Failure type: ${failure.runtimeType}');
         notifyListeners();
       },
       (response) {
@@ -80,6 +82,7 @@ class ChannelProvider extends ChangeNotifier {
         _hasMorePages = response.hasMore;
 
         _state = ChannelState.success;
+        print('[ChannelProvider] Successfully loaded ${response.channels.length} channels');
         notifyListeners();
       },
     );

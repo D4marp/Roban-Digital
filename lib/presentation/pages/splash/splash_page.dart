@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:robandigital/core/utils/service_locator.dart';
+import 'package:robandigital/data/datasources/local/auth_local_datasource.dart';
 import '../../../core/gen/assets.gen.dart';
 import '../../../config/constants/app_constants.dart';
 import '../../../config/routes/app_routes.dart';
@@ -45,7 +47,17 @@ class _SplashPageState extends State<SplashPage>
   void _navigateToHome() {
     Future.delayed(AppConstants.splashDuration, () {
       if (mounted) {
-        NavigationService.pushReplacementNamed(AppRoutes.login);
+        // Check if user is already logged in
+        final authLocalDataSource = getIt<AuthLocalDataSource>();
+        final token = authLocalDataSource.getToken();
+        
+        if (token != null && token.isNotEmpty) {
+          // User is logged in, go to home
+          NavigationService.pushReplacementNamed(AppRoutes.home);
+        } else {
+          // User is not logged in, go to login
+          NavigationService.pushReplacementNamed(AppRoutes.login);
+        }
       }
     });
   }

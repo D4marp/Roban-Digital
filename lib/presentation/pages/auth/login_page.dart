@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/gen/assets.gen.dart';
 import '../../../config/routes/app_routes.dart';
 import '../../../config/routes/navigation_service.dart';
@@ -17,6 +18,45 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _rememberMe = false;
+
+  static const String _savedEmailKey = 'saved_email';
+  static const String _savedPasswordKey = 'saved_password';
+  static const String _rememberMeKey = 'remember_me';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString(_savedEmailKey);
+    final savedPassword = prefs.getString(_savedPasswordKey);
+    final rememberMe = prefs.getBool(_rememberMeKey) ?? false;
+
+    if (rememberMe && savedEmail != null && savedPassword != null) {
+      setState(() {
+        _phoneController.text = savedEmail;
+        _passwordController.text = savedPassword;
+        _rememberMe = rememberMe;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setString(_savedEmailKey, _phoneController.text.trim());
+      await prefs.setString(_savedPasswordKey, _passwordController.text.trim());
+      await prefs.setBool(_rememberMeKey, true);
+    } else {
+      await prefs.remove(_savedEmailKey);
+      await prefs.remove(_savedPasswordKey);
+      await prefs.setBool(_rememberMeKey, false);
+    }
+  }
 
   @override
   void dispose() {
@@ -39,6 +79,9 @@ class _LoginPageState extends State<LoginPage> {
         final state = loginProvider.state;
         
         if (state.toString().endsWith('success')) {
+          // Save credentials if remember me is checked
+          await _saveCredentials();
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Login berhasil!')),
           );
@@ -227,28 +270,74 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
 
-                                // Forgot Password
-                                Align(
-                                alignment: Alignment.centerRight,
-                                child: GestureDetector(
-                                  onTap: loginProvider.isLoading
-                                      ? null
-                                      : () {
-                                          NavigationService
-                                              .goToForgotPassword();
-                                        },
-                                  child: const Text(
-                                  'Lupa Password?',
-                                    style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontFamily: 'Ubuntu',
-                                    fontWeight: FontWeight.w500,
-                                   
+                              const SizedBox(height: 8),
+
+                              // Remember Me Checkbox
+                              SizedBox(
+                                width: 328,
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 24,
+                                      width: 24,
+                                      child: Checkbox(
+                                        value: _rememberMe,
+                                        onChanged: loginProvider.isLoading
+                                            ? null
+                                            : (value) {
+                                                setState(() {
+                                                  _rememberMe = value ?? false;
+                                                });
+                                              },
+                                        activeColor: const Color(0xFF1B3C53),
+                                        checkColor: Colors.white,
+                                        side: const BorderSide(
+                                          color: Colors.white,
+                                          width: 1.5,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: loginProvider.isLoading
+                                          ? null
+                                          : () {
+                                              setState(() {
+                                                _rememberMe = !_rememberMe;
+                                              });
+                                            },
+                                      child: const Text(
+                                        'Ingat Saya',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontFamily: 'Ubuntu',
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    // Forgot Password
+                                    GestureDetector(
+                                      onTap: loginProvider.isLoading
+                                          ? null
+                                          : () {
+                                              NavigationService
+                                                  .goToForgotPassword();
+                                            },
+                                      child: const Text(
+                                        'Lupa Password?',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontFamily: 'Ubuntu',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                              ),
                               
 
                               const SizedBox(height: 32),

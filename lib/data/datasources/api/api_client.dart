@@ -6,6 +6,7 @@ class ApiClient {
   static const String _tokenKey = 'auth_token';
   
   late Dio _dio;
+  String? _cachedToken;
 
   ApiClient() {
     _dio = Dio(
@@ -20,7 +21,18 @@ class ApiClient {
     // Add interceptors
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
+          // Ensure token is in headers for authenticated requests
+          if (!options.path.contains('/auth/login') && 
+              !options.headers.containsKey('Authorization')) {
+            // Try to load token from cache or SharedPreferences
+            if (_cachedToken == null || _cachedToken!.isEmpty) {
+              await _loadTokenFromPrefs();
+            }
+            if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $_cachedToken';
+            }
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -33,18 +45,22 @@ class ApiClient {
     );
   }
 
+  Future<void> _loadTokenFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _cachedToken = prefs.getString(_tokenKey);
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
   Dio get dio => _dio;
 
   /// Initialize API client with stored token on app startup
   Future<void> initializeAuthToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(_tokenKey);
-      if (token != null && token.isNotEmpty) {
-        setAuthToken(token);
-      }
-    } catch (e) {
-      // Silently fail if prefs not available
+    await _loadTokenFromPrefs();
+    if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+      _dio.options.headers['Authorization'] = 'Bearer $_cachedToken';
     }
   }
 
@@ -85,10 +101,12 @@ class ApiClient {
   }
 
   void setAuthToken(String token) {
+    _cachedToken = token;
     _dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
   void removeAuthToken() {
+    _cachedToken = null;
     _dio.options.headers.remove('Authorization');
   }
 }

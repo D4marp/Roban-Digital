@@ -34,9 +34,11 @@ class AuthLocalDataSource {
     await _prefs.setString(_userEmailKey, email);
     await _prefs.setString(_userRoleKey, role);
     await _prefs.setInt(_userUnitIdKey, unitId);
-    if (username != null) {
-      await _prefs.setString(_userUsernameKey, username);
-    }
+    // Always save username - use email prefix as fallback if null/empty
+    final usernameToSave = (username != null && username.isNotEmpty) 
+        ? username 
+        : email.split('@').first;
+    await _prefs.setString(_userUsernameKey, usernameToSave);
   }
 
   // Get user ID

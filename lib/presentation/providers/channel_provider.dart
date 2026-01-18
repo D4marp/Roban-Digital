@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:robandigital/core/utils/service_locator.dart';
-import 'package:robandigital/data/datasources/api/api_client.dart';
 import '../../domain/usecases/get_channels_usecase.dart';
 import '../../domain/usecases/get_channel_by_id_usecase.dart';
 import '../../domain/entities/channel_entity.dart';
@@ -47,8 +46,8 @@ class ChannelProvider extends ChangeNotifier {
   }) async {
     if (_state == ChannelState.loading) return;
 
-    // Ensure token is initialized before making request
-    await getIt<ApiClient>().initializeAuthToken();
+    // Token is already set during login via AuthRepositoryImpl
+    // No need to call initializeAuthToken() here - it was causing timing issues
 
     _state = ChannelState.loading;
     _errorMessage = null;
@@ -87,8 +86,7 @@ class ChannelProvider extends ChangeNotifier {
 
   /// Get channel by ID
   Future<void> getChannelById(int id) async {
-    // Ensure token is initialized before making request
-    await getIt<ApiClient>().initializeAuthToken();
+    // Token is already set during login via AuthRepositoryImpl
 
     _state = ChannelState.loading;
     _errorMessage = null;

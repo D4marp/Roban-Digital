@@ -8,6 +8,7 @@ import 'config/routes/route_generator.dart';
 import 'config/routes/navigation_service.dart';
 import 'presentation/providers/login_provider.dart';
 import 'presentation/providers/channel_provider.dart';
+import 'presentation/providers/channel_chat_provider.dart';
 import 'presentation/providers/home_provider.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
@@ -24,6 +25,11 @@ class RobanDigitalApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => HomeProvider(
             authRepository: getIt<AuthRepository>(),
+            authLocalDataSource: getIt<AuthLocalDataSource>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChannelChatProvider(
             authLocalDataSource: getIt<AuthLocalDataSource>(),
           ),
         ),

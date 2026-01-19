@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:robandigital/data/models/login_model.dart';
+import 'package:robandigital/data/datasources/local/auth_local_datasource.dart';
 import '../api/api_client.dart';
 
 
@@ -12,23 +14,54 @@ abstract class LoginRemoteDataSource {
 
 class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
   final ApiClient apiClient;
+  final AuthLocalDataSource authLocalDataSource;
 
-  LoginRemoteDataSourceImpl({required this.apiClient});
+  LoginRemoteDataSourceImpl({
+    required this.apiClient,
+    required this.authLocalDataSource,
+  });
 
   @override
   Future<LoginResponseModel> login(LoginRequestModel request) async {
     try {
+      if (kDebugMode) {
+        print('[LoginRemoteDataSource] POST /auth/login with:');
+        print('  - email: ${request.email}');
+        print('  - portal: ${request.portal}');
+      }
+
       final response = await apiClient.post(
         '/auth/login',
         data: request.toJson(),
       );
 
+      if (kDebugMode) {
+        print('[LoginRemoteDataSource] Response status: ${response.statusCode}');
+        print('[LoginRemoteDataSource] Raw response data: ${response.data}');
+      }
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return LoginResponseModel.fromJson(response.data);
+        final result = LoginResponseModel.fromJson(response.data);
+        
+        if (kDebugMode) {
+          print('[LoginRemoteDataSource] Parsed LoginResponseModel:');
+          print('  - success: ${result.success}');
+          print('  - token: ${result.token.substring(0, 20)}...');
+          print('  - refreshToken: ${result.refreshToken.substring(0, 20)}...');
+          print('  - user.id: ${result.user.id}');
+          print('  - user.email: ${result.user.email}');
+          print('  - user.username: ${result.user.username}');
+          print('  - user.role: ${result.user.role}');
+        }
+        
+        return result;
       } else {
         throw _handleErrorResponse(response);
       }
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[LoginRemoteDataSource] DioException: ${e.message}');
+      }
       throw _handleDioException(e);
     }
   }
@@ -36,14 +69,37 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
   @override
   Future<LoginResponseModel> getCurrentUser() async {
     try {
+      if (kDebugMode) {
+        print('[LoginRemoteDataSource.getCurrentUser] GET /auth/me');
+      }
+
       final response = await apiClient.get('/auth/me');
 
+      if (kDebugMode) {
+        print('[LoginRemoteDataSource.getCurrentUser] Response status: ${response.statusCode}');
+        print('[LoginRemoteDataSource.getCurrentUser] Raw response: ${response.data}');
+      }
+
       if (response.statusCode == 200) {
-        return LoginResponseModel.fromJson(response.data);
+        final result = LoginResponseModel.fromJson(response.data);
+        
+        if (kDebugMode) {
+          print('[LoginRemoteDataSource.getCurrentUser] Parsed user:');
+          print('  - id: ${result.user.id}');
+          print('  - email: ${result.user.email}');
+          print('  - username: ${result.user.username}');
+          print('  - role: ${result.user.role}');
+        }
+        
+        return result;
       } else {
         throw _handleErrorResponse(response);
       }
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[LoginRemoteDataSource.getCurrentUser] DioException: ${e.message}');
+        print('[LoginRemoteDataSource.getCurrentUser] Status code: ${e.response?.statusCode}');
+      }
       throw _handleDioException(e);
     }
   }
@@ -51,7 +107,18 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
   @override
   Future<LoginResponseModel> refreshToken() async {
     try {
-      final response = await apiClient.post('/auth/refresh');
+      // Get refresh token from local storage
+      final storedRefreshToken = authLocalDataSource.getRefreshToken();
+      
+      if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
+        throw Exception('No refresh token available');
+      }
+
+      // Call API with refreshToken in request body
+      final response = await apiClient.post(
+        '/auth/refresh',
+        data: {'refreshToken': storedRefreshToken},
+      );
 
       if (response.statusCode == 200) {
         return LoginResponseModel.fromJson(response.data);

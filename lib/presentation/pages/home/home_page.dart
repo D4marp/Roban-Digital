@@ -252,8 +252,11 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Consumer<HomeProvider>(
                         builder: (context, homeProvider, _) {
+                          final displayName = homeProvider.userName.isNotEmpty
+                              ? homeProvider.userName
+                              : 'User';
                           return Text(
-                            homeProvider.userName,
+                            displayName,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -265,8 +268,11 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 2),
                       Consumer<HomeProvider>(
                         builder: (context, homeProvider, _) {
+                          final displayEmail = homeProvider.userEmail.isNotEmpty
+                              ? homeProvider.userEmail
+                              : 'user@example.com';
                           return Text(
-                            homeProvider.userEmail,
+                            displayEmail,
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w400,

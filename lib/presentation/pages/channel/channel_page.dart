@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:robandigital/core/utils/service_locator.dart';
+import 'package:robandigital/data/datasources/api/api_client.dart';
 import 'package:robandigital/data/datasources/local/auth_local_datasource.dart';
 import '../../providers/channel_provider.dart';
 import 'participants_page.dart';
@@ -20,6 +21,26 @@ class _ChannelPageState extends State<ChannelPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    // Set up unauthorized callback
+    final apiClient = getIt<ApiClient>();
+    apiClient.setOnUnauthorizedCallback(() async {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesi Anda telah berakhir. Silakan login kembali.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // Wait a bit then navigate to login
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      }
+    });
+    
     // Load channels on init with user's unitId
     Future.microtask(() {
       final unitId = getIt<AuthLocalDataSource>().getUnitId();
@@ -70,17 +91,37 @@ class _ChannelPageState extends State<ChannelPage> {
           }
 
           if (channelProvider.state == ChannelState.error) {
+            final error = channelProvider.errorMessage ?? 'Unknown error';
+            final is401 = error.contains('Sesi Anda telah berakhir') || error.contains('Invalid or expired token');
+            
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Error: ${channelProvider.errorMessage}'),
+                  Icon(
+                    is401 ? Icons.lock_outline : Icons.error_outline,
+                    size: 48,
+                    color: is401 ? Colors.orange : Colors.red,
+                  ),
                   const SizedBox(height: 16),
+                  Text(
+                    error,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
-                      channelProvider.refreshChannels();
+                      if (is401) {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      } else {
+                        channelProvider.refreshChannels();
+                      }
                     },
-                    child: const Text('Retry'),
+                    child: Text(is401 ? 'Go to Login' : 'Retry'),
                   ),
                 ],
               ),

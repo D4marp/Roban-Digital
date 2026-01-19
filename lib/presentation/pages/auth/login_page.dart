@@ -87,7 +87,8 @@ class _LoginPageState extends State<LoginPage> {
           );
           
           // Navigate to home page
-          Future.delayed(const Duration(milliseconds: 500), () {
+          // Wait a bit to ensure login state is processed
+          Future.delayed(const Duration(milliseconds: 800), () {
             if (mounted) {
               NavigationService.pushReplacementNamed(AppRoutes.home);
             }

@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthLocalDataSource {
   static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
   static const String _userEmailKey = 'user_email';
   static const String _userRoleKey = 'user_role';
@@ -20,6 +21,27 @@ class AuthLocalDataSource {
   // Get saved token
   String? getToken() {
     return _prefs.getString(_tokenKey);
+  }
+
+  // Save refresh token
+  Future<void> saveRefreshToken(String refreshToken) async {
+    await _prefs.setString(_refreshTokenKey, refreshToken);
+  }
+
+  // Get saved refresh token
+  String? getRefreshToken() {
+    return _prefs.getString(_refreshTokenKey);
+  }
+
+  // Save both tokens
+  Future<void> saveTokens({
+    required String token,
+    required String refreshToken,
+  }) async {
+    await Future.wait([
+      _prefs.setString(_tokenKey, token),
+      _prefs.setString(_refreshTokenKey, refreshToken),
+    ]);
   }
 
   // Save user data
@@ -84,11 +106,14 @@ class AuthLocalDataSource {
 
   // Clear all auth data (logout)
   Future<void> clearAll() async {
-    await _prefs.remove(_tokenKey);
-    await _prefs.remove(_userIdKey);
-    await _prefs.remove(_userEmailKey);
-    await _prefs.remove(_userRoleKey);
-    await _prefs.remove(_userUsernameKey);
-    await _prefs.remove(_userUnitIdKey);
+    await Future.wait([
+      _prefs.remove(_tokenKey),
+      _prefs.remove(_refreshTokenKey),
+      _prefs.remove(_userIdKey),
+      _prefs.remove(_userEmailKey),
+      _prefs.remove(_userRoleKey),
+      _prefs.remove(_userUsernameKey),
+      _prefs.remove(_userUnitIdKey),
+    ]);
   }
 }

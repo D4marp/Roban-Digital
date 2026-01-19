@@ -32,7 +32,10 @@ Future<void> setupServiceLocator() async {
   );
 
   getIt.registerSingleton<LoginRemoteDataSource>(
-    LoginRemoteDataSourceImpl(apiClient: getIt<ApiClient>()),
+    LoginRemoteDataSourceImpl(
+      apiClient: getIt<ApiClient>(),
+      authLocalDataSource: getIt<AuthLocalDataSource>(),
+    ),
   );
 
   // Repositories

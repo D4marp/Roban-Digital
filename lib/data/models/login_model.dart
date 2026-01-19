@@ -69,11 +69,13 @@ class UserModel extends Equatable {
 class LoginResponseModel extends Equatable {
   final bool success;
   final String token;
+  final String refreshToken;
   final UserModel user;
 
   const LoginResponseModel({
     required this.success,
     required this.token,
+    required this.refreshToken,
     required this.user,
   });
 
@@ -81,10 +83,37 @@ class LoginResponseModel extends Equatable {
     // Handle nested data structure if API wraps response
     final data = json['data'] is Map ? json['data'] as Map<String, dynamic> : json;
     
+    // Debug: log what we're parsing
+    print('[LoginResponseModel.fromJson] Parsing data keys: ${data.keys.toList()}');
+    print('[LoginResponseModel.fromJson] Full data: $data');
+    
+    // Handle two different response formats:
+    // 1. /auth/login returns: {success, token, refreshToken, user: {...}}
+    // 2. /auth/me returns: {id, email, username, role, unitId, createdAt} (user fields directly)
+    
+    Map<String, dynamic> userData;
+    if (data['user'] is Map) {
+      // Format 1: user is nested object
+      userData = data['user'] as Map<String, dynamic>;
+      print('[LoginResponseModel.fromJson] User data from nested object: $userData');
+    } else if (data.containsKey('id') && data.containsKey('email')) {
+      // Format 2: user data is at root level (from /auth/me)
+      userData = data;
+      print('[LoginResponseModel.fromJson] User data from root level: $userData');
+    } else {
+      // Fallback: empty user
+      userData = {};
+      print('[LoginResponseModel.fromJson] No user data found, using empty map');
+    }
+    
+    final user = UserModel.fromJson(userData);
+    print('[LoginResponseModel.fromJson] Parsed user: id=${user.id}, email=${user.email}, username=${user.username}');
+    
     return LoginResponseModel(
       success: data['success'] as bool? ?? true,
       token: data['token'] as String? ?? '',
-      user: UserModel.fromJson(data['user'] as Map<String, dynamic>? ?? {}),
+      refreshToken: data['refreshToken'] as String? ?? '',
+      user: user,
     );
   }
 
@@ -92,10 +121,11 @@ class LoginResponseModel extends Equatable {
     return {
       'success': success,
       'token': token,
+      'refreshToken': refreshToken,
       'user': user.toJson(),
     };
   }
 
   @override
-  List<Object?> get props => [success, token, user];
+  List<Object?> get props => [success, token, refreshToken, user];
 }

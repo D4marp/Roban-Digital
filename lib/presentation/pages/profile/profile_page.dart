@@ -31,132 +31,141 @@ class ProfilePage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            
-            // Profile Picture
-            Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                  width: 3,
+      body: Consumer<HomeProvider>(
+        builder: (context, homeProvider, _) {
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                
+                // Profile Picture
+                Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 3,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/home/profile_picture.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/home/profile_picture.png',
-                  fit: BoxFit.cover,
+                
+                const SizedBox(height: 20),
+                
+                // Name
+                Text(
+                  homeProvider.userName.isNotEmpty 
+                    ? homeProvider.userName 
+                    : 'Loading...',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Name
-            const Text(
-              'Salsabila Khaliq',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // Email
-            const Text(
-              'salsabila123@gmail.com',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            
-            const SizedBox(height: 4),
-            
-            // Phone
-            const Text(
-              '991143092',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            
-            const SizedBox(height: 40),
-            
-            // Menu Items
-            _buildMenuItem(
-              context,
-              icon: Icons.person_outline,
-              title: 'Akun',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AccountPage(),
+                
+                const SizedBox(height: 8),
+                
+                // Email
+                Text(
+                  homeProvider.userEmail.isNotEmpty
+                    ? homeProvider.userEmail
+                    : 'Loading...',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
                   ),
-                );
-              },
-            ),
-            
-            _buildMenuItem(
-              context,
-              icon: Icons.lock_outline,
-              title: 'Ubah Password',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ChangePasswordPage(),
+                ),
+                
+                const SizedBox(height: 4),
+                
+                // Role
+                if (homeProvider.userRole != null)
+                  Text(
+                    homeProvider.userRole!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
                   ),
-                );
-              },
-            ),
-            
-            _buildMenuItem(
-              context,
-              icon: Icons.notifications_outlined,
-              title: 'Notifikasi',
-              onTap: () {
-                Navigator.push(
+                
+                const SizedBox(height: 40),
+                
+                // Menu Items
+                _buildMenuItem(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationPage(),
-                  ),
-                );
-              },
-            ),
-            
-            _buildMenuItem(
-              context,
-              icon: Icons.verified_user_outlined,
-              title: 'Verifikasi 2 Langkah',
-              onTap: () {
-                Navigator.push(
+                  icon: Icons.person_outline,
+                  title: 'Akun',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AccountPage(),
+                      ),
+                    );
+                  },
+                ),
+                
+                _buildMenuItem(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const TwoFactorAuthPage(),
-                  ),
-                );
-              },
+                  icon: Icons.lock_outline,
+                  title: 'Ubah Password',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangePasswordPage(),
+                      ),
+                    );
+                  },
+                ),
+                
+                _buildMenuItem(
+                  context,
+                  icon: Icons.notifications_outlined,
+                  title: 'Notifikasi',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationPage(),
+                      ),
+                    );
+                  },
+                ),
+                
+                _buildMenuItem(
+                  context,
+                  icon: Icons.verified_user_outlined,
+                  title: 'Verifikasi 2 Langkah',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TwoFactorAuthPage(),
+                      ),
+                    );
+                  },
+                ),
+                
+                _buildMenuItem(
+                  context,
+                  icon: Icons.logout,
+                  title: 'Logout',
+                  onTap: () => _showLogoutConfirmation(context),
+                  isLast: true,
+                ),
+              ],
             ),
-            
-            _buildMenuItem(
-              context,
-              icon: Icons.logout,
-              title: 'Logout',
-              onTap: () => _showLogoutConfirmation(context),
-              isLast: true,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

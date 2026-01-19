@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:robandigital/core/utils/service_locator.dart';
 import '../../domain/usecases/get_channels_usecase.dart';
 import '../../domain/usecases/get_channel_by_id_usecase.dart';
@@ -46,8 +47,12 @@ class ChannelProvider extends ChangeNotifier {
   }) async {
     if (_state == ChannelState.loading) return;
 
-    // Token is already set during login via AuthRepositoryImpl
-    // No need to call initializeAuthToken() here - it was causing timing issues
+    if (kDebugMode) {
+      print('[ChannelProvider.getChannels] Loading channels...');
+      print('  - page: $page');
+      print('  - pageSize: $pageSize');
+      print('  - append: $append');
+    }
 
     _state = ChannelState.loading;
     _errorMessage = null;
@@ -63,11 +68,18 @@ class ChannelProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
+        if (kDebugMode) {
+          print('[ChannelProvider.getChannels] Error: ${failure.message}');
+        }
         _state = ChannelState.error;
         _errorMessage = failure.message;
         notifyListeners();
       },
       (response) {
+        if (kDebugMode) {
+          print('[ChannelProvider.getChannels] Success! Loaded ${response.channels.length} channels');
+        }
+        
         if (append) {
           _channels.addAll(response.channels);
         } else {

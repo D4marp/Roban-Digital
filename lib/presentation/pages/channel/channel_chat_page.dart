@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:robandigital/presentation/providers/channel_chat_provider.dart';
 
 class ChannelChatPage extends StatefulWidget {
   final String channelName;
@@ -16,43 +18,17 @@ class ChannelChatPage extends StatefulWidget {
 
 class _ChannelChatPageState extends State<ChannelChatPage> {
   final TextEditingController _messageController = TextEditingController();
-  final List<Map<String, dynamic>> messages = [
-    {
-      'sender': 'Jendral Sudirman',
-      'message':
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      'isMe': false,
-      'time': '10:30',
-    },
-    {
-      'sender': 'Ir Soekarno',
-      'message':
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      'isMe': true,
-      'time': '10:32',
-    },
-    {
-      'sender': 'Jendral Sudirman',
-      'message':
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      'isMe': false,
-      'time': '10:35',
-    },
-    {
-      'sender': 'Jendral Sudirman',
-      'message':
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      'isMe': false,
-      'time': '10:37',
-    },
-    {
-      'sender': 'Ir Soekarno',
-      'message':
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      'isMe': true,
-      'time': '10:38',
-    },
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load mock messages when page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ChannelChatProvider>().loadMockMessages(widget.channelName);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -62,15 +38,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
 
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
-
-    setState(() {
-      messages.add({
-        'sender': 'Ir Soekarno',
-        'message': _messageController.text,
-        'isMe': true,
-        'time': TimeOfDay.now().format(context),
-      });
-    });
+    
+    context.read<ChannelChatProvider>().sendMessage(_messageController.text);
     _messageController.clear();
   }
 
@@ -85,81 +54,143 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Chat',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Column(
-        children: [
-          // Chat messages
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                final showSender = index == 0 ||
-                    messages[index - 1]['sender'] != message['sender'];
-                return _buildMessageBubble(
-                  message['sender'],
-                  message['message'],
-                  message['isMe'],
-                  showSender,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.channelName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Consumer<ChannelChatProvider>(
+              builder: (context, provider, _) {
+                return Text(
+                  'Token: ${provider.token?.substring(0, 20) ?? "Not loaded"}...',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                  ),
                 );
               },
             ),
-          ),
+          ],
+        ),
+        centerTitle: false,
+      ),
+      body: Consumer<ChannelChatProvider>(
+        builder: (context, chatProvider, _) {
+          if (chatProvider.state == ChannelChatState.loading && chatProvider.messages.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            );
+          }
 
-          // Message input
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFD6E8F5),
-                borderRadius: BorderRadius.circular(25),
+          if (chatProvider.state == ChannelChatState.error) {
+            return Center(
+              child: Text(
+                'Error: ${chatProvider.errorMessage}',
+                style: const TextStyle(color: Colors.white),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Ketik Pesan',
-                        hintStyle: TextStyle(
+            );
+          }
+
+          return Column(
+            children: [
+              // Chat messages
+              Expanded(
+                child: chatProvider.messages.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.message_outlined,
+                              color: Colors.white54,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Belum ada pesan',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            const SizedBox(height: 8),
+                            Consumer<ChannelChatProvider>(
+                              builder: (context, provider, _) {
+                                return Text(
+                                  'User ID: ${provider.userId ?? "Unknown"}',
+                                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: chatProvider.messages.length,
+                        itemBuilder: (context, index) {
+                          final message = chatProvider.messages[index];
+                          final showSender = index == 0 ||
+                              chatProvider.messages[index - 1].sender != message.sender;
+                          return _buildMessageBubble(
+                            message.sender,
+                            message.content,
+                            message.isMe,
+                            showSender,
+                          );
+                        },
+                      ),
+              ),
+
+              // Message input
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD6E8F5),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: const InputDecoration(
+                            hintText: 'Ketik Pesan',
+                            hintStyle: TextStyle(
+                              color: Color(0xFF2F5F7F),
+                              fontSize: 14,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: Color(0xFF2F5F7F),
+                            fontSize: 14,
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.send,
                           color: Color(0xFF2F5F7F),
-                          fontSize: 14,
                         ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
+                        onPressed: _sendMessage,
                       ),
-                      style: const TextStyle(
-                        color: Color(0xFF2F5F7F),
-                        fontSize: 14,
-                      ),
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.send,
-                      color: Color(0xFF2F5F7F),
-                    ),
-                    onPressed: _sendMessage,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
